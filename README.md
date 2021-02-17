@@ -4,7 +4,7 @@ This project was created using ReactJS.
 
 ## Available Scripts
 
-In the project main directory, after doint
+In the project main directory, after doing
 
 ### `npm install`
 you can run:
