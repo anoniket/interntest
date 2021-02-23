@@ -3,6 +3,8 @@ import "../Styles/home.css";
 import { Button } from 'react-bootstrap';
 import ArrowForwardIcon from '@material-ui/icons/ArrowForward';
 import Axios from "axios";
+import LinearProgress from '@material-ui/core/LinearProgress';
+import CircularProgress from '@material-ui/core/CircularProgress';
 import ReactJson from 'react-json-view'
 
 function Home(){
@@ -10,17 +12,20 @@ function Home(){
 
 const [next,setNext] = useState(false);
 const [screenN,setScreenN] = useState(1);
+const [showSpin,setShowSpin] = useState(false);
 const [nextInput,setNextInput] = useState(false);
 const [showSugg,setShowSugg] = useState(false);
 const [inter,setInter] = useState("");
 const [suggArr,setArr] = useState([]);
 const [finalArr,setFinalArr] = useState([]);
+const [disable,setDisable] = useState(false);
 const [showFinal,setshowFinal] = useState(false);
 const [jsonResp,setjsonResp] = useState("");
 const [detail,setDetail] = useState({
     name:"",
     email:""
 })
+const [err,setErr] = useState("");
 
 
 //proceed next after enter press
@@ -29,6 +34,10 @@ function handlePress(e){
   
     if(e.key==="Enter"){
         setScreenN(2);
+        setShowSpin(true);
+        setTimeout(() => {
+            setShowSpin(false);  
+        }, 500);
     }
 }
 
@@ -46,6 +55,7 @@ function changeD(e){
 
 function handlePress2(e){
     if(e.key==="Enter"){
+        
         showAuto();
     }
 }
@@ -54,7 +64,21 @@ function handlePress2(e){
 //proceed to screen3
 
 function showAuto(){
-   setScreenN(3);
+    var regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/;
+    if(regex.test(detail.email)){
+        setScreenN(3);
+        setShowSpin(true);
+        setTimeout(() => {
+            setShowSpin(false);  
+        }, 500);
+    }
+    else{
+     setErr("Please enter a valid email");
+     setTimeout(() => {
+         setErr("");
+     }, 1200);
+    }
+   
 }
 
 
@@ -122,6 +146,7 @@ function deleteIt(x){
 //final post request to register api
 
 const finalsubmit = async (x) => {
+    setDisable(true);
     console.log(detail.name);
     console.log(detail.email);
     console.log(finalArr);
@@ -141,32 +166,73 @@ const finalsubmit = async (x) => {
         console.log(res.data);
         setshowFinal(true); 
         setjsonResp(res.data);
+        setDisable(false);
        
     })
+}
+
+
+
+function moveNext(){
+    setNext(true);
+    setShowSpin(true);
+    setTimeout(() => {
+        setShowSpin(false);  
+    }, 500);
+
 }
 
 //show this until we have all the data
 
 if(!showFinal){
     return(
-        !next ? <div className="mainH"> <h1>hello.</h1>
-            <Button variant="outline-light" onClick={()=>{setNext(true)}}>let's Go</Button></div>:
-            <div className="secondH"><h1>tell us about yourself.</h1>
-        
-            {/* screen 1 */}
-            {screenN===1 ? 
+        !next&&!showSpin ? <div className="mainH"> <h1>hello.</h1>
+            {/* <CircularProgress /> */}
+      
+            <Button variant="outline-light" onClick={moveNext}>let's Go</Button></div>: next&&showSpin ? <div className="secondH">
+            <LinearProgress style={{width:"50%"}} />
+      
+            </div> : 
+            next&&!showSpin&&screenN===1 ?
+
+            <div className="secondH">
+            <h1>tell us about yourself. You are {detail.name} ?</h1>
             <div className="inputaH">
-             <input name="name" className="form-control" placeholder="name please" onKeyPress={handlePress} onChange={changeD} value={detail.name} />
-            <ArrowForwardIcon style={{fontSize:40,cursor:"pointer"}} onClick={()=>{setScreenN(2)}} /> </div> : 
+             <input name="name" type="text" className="form-control" placeholder="name please" onKeyPress={handlePress} onChange={changeD} value={detail.name} />
+            <ArrowForwardIcon style={{fontSize:40,cursor:"pointer"}} onClick={()=>{setScreenN(2);
+            setShowSpin(true);
+            setTimeout(() => {
+            setShowSpin(false);  
+            }, 500);
+            }} /> 
+            </div>
+            </div> : 
 
-            //screen 2
-
-            screenN===2 ?
+            next&&showSpin&&screenN===2 ? 
+            <div className="secondH">
+            <LinearProgress style={{width:"50%"}} />
+      
+            </div> :
+             
+            next&&!showSpin&&screenN===2 ?
+            <div className="secondH">
+            <h1>hello {detail.name}.</h1>
+            <p style={{color:"red",margin:0}}>{err}</p>
             <div className="inputaH">
             <input name="email" className="form-control" placeholder="email please" onKeyPress={handlePress2} onChange={changeD} value={detail.email} />
             <ArrowForwardIcon style={{fontSize:40,cursor:"pointer"}} onClick={showAuto} /> 
+             </div>
              </div> :
+             
+             next&&showSpin&&screenN===3 ? 
+            <div className="secondH">
+            <LinearProgress style={{width:"50%"}} />
+      
+            </div> :
 
+             
+             <div className="secondH">
+             <h1>select any 3 interests {detail.name}.</h1>
              <div className="inputaH2">
              <div style={{display:"flex",flexDirection:"row",alignItems:"center",marginBottom:20}}> 
              <input name="interests" className="form-control" placeholder="what interests you?" value={inter} onChange={changeSuggestions} />
@@ -178,7 +244,8 @@ if(!showFinal){
               })
              } 
              </div>
-             <ArrowForwardIcon style={{fontSize:40,cursor:"pointer"}} onClick={finalsubmit} />
+             {disable ? <CircularProgress /> :<ArrowForwardIcon style={{fontSize:40,cursor:"pointer"}} onClick={finalsubmit} />}
+             
              </div>
 
             {/* display selected interests seperately  */}
@@ -191,18 +258,10 @@ if(!showFinal){
              }
              </div>
              </div>
-        
-              }
-        
-        
-        
-            
-        
-                
-            </div>
+             </div>
             
             
-        )
+        );
 }
 
 //display the final data
